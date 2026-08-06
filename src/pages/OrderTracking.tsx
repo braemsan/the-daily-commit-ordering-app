@@ -191,21 +191,41 @@ function OrderConfirmation({
           </div>
         )}
       </section>
+      <p className="customer-thanks">Thank you for supporting The Daily Commit ☕</p>
       {order.freeDrinksApplied && (
         <section className="paynow-card" aria-labelledby="event-promotion-title">
-          <span className="paynow-kicker">Free drinks event</span>
-          <h2 id="event-promotion-title">Today's drinks are on us ☕</h2>
-          <p>All drinks are free for today's event.</p>
-          <p>Feeling generous? I won't say no to a little PayNow love 😉</p>
-          <div className="paynow-copy-row">
-            <div>
-              <span>PayNow</span>
-              <strong>{displayedPaynow}</strong>
-            </div>
-            <button type="button" onClick={() => void copyPaynow()}>
-              Copy
-            </button>
+          <span className="paynow-kicker">A little event-day treat</span>
+          <h2 id="event-promotion-title">☕ Your coffee is completely FOC today!</h2>
+          <div className="paynow-message">
+            <p>
+              Thanks for dropping by
+              <br />
+              <strong>The Daily Commit.</strong>
+            </p>
+            <p>
+              But I won't reject any amount
+              <br />
+              sent via PayNow 😉
+            </p>
           </div>
+          <img
+            className="paynow-qr-image"
+            src="/assets/paynow-qr.jpg"
+            alt="PayNow QR code for The Daily Commit"
+            width="769"
+            height="769"
+          />
+          <div className="paynow-number">
+            <span>PayNow</span>
+            <strong>{displayedPaynow}</strong>
+          </div>
+          <button
+            className="secondary-button paynow-copy-button"
+            type="button"
+            onClick={() => void copyPaynow()}
+          >
+            Copy PayNow Number
+          </button>
           {copyStatus !== 'idle' && (
             <p className={copyStatus === 'copied' ? 'copy-success' : 'copy-error'} role="status">
               {copyStatus === 'copied'
@@ -218,7 +238,6 @@ function OrderConfirmation({
       <a className="secondary-button new-order-link" href="/">
         <CheckCircle2 size={18} /> Place another order
       </a>
-      <p className="customer-thanks">Thank you for supporting The Daily Commit ☕</p>
     </div>
   )
 }
