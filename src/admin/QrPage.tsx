@@ -43,7 +43,6 @@ export function QrPage() {
           <div className="qr-poster-code" aria-label={`QR code for ${url}`}>
             <QRCodeSVG value={url} size={420} level="H" includeMargin />
           </div>
-          <strong className="qr-poster-url">{url}</strong>
         </div>
       </section>
     </>

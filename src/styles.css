@@ -2225,22 +2225,6 @@ button:disabled {
   height: 100%;
   display: block;
 }
-.qr-poster-url {
-  position: absolute;
-  top: 83.45%;
-  left: 16%;
-  width: 68%;
-  min-height: 2.2%;
-  padding: 0.2% 1%;
-  display: grid;
-  place-items: center;
-  color: #2f241c;
-  background: #faf4e8;
-  font-size: clamp(0.45rem, 1.55vw, 0.94rem);
-  line-height: 1.15;
-  text-align: center;
-  overflow-wrap: anywhere;
-}
 
 @media (max-width: 1180px) {
   .metrics-grid {
