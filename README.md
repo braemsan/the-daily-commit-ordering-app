@@ -8,6 +8,13 @@ A simple booth ordering system:
 - Sugar / no-sugar choices are available for Hot Americano, Hot Latte, Iced Americano, and Iced Latte.
 - The app does not collect online payment. Customers pay at the booth.
 
+## Technology
+
+- React and TypeScript
+- Vite
+- Tailwind CSS
+- Supabase
+
 ## Pages
 
 - Customer ordering page: `/`
@@ -49,12 +56,26 @@ In Supabase, open **Table Editor → menu_items** and fill in the `price` column
 
 ## 4. Run locally
 
+Use Node.js 22 or newer. The repository includes an `.nvmrc` file for version managers such as
+`nvm`.
+
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
 Open the URL shown by Vite. The admin dashboard is at `/admin`.
+
+## Quality checks
+
+Run the complete local quality gate before opening a pull request:
+
+```bash
+npm run check
+```
+
+This checks formatting, lint rules, TypeScript, and the production build. GitHub Actions runs the
+same command for pushes and pull requests targeting `main`.
 
 ## 5. Deploy
 

@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build and test output
+dist/
+coverage/
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+
+# TypeScript
+*.tsbuildinfo
