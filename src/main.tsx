@@ -1,11 +1,13 @@
-import React from 'react'
+import React, { lazy, Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './pages/App'
-import Admin from './pages/Admin'
-import OrderTracking from './pages/OrderTracking'
 import './styles.css'
 
-const isAdminRoute = window.location.pathname === '/admin'
+const App = lazy(() => import('./pages/App'))
+const Admin = lazy(() => import('./pages/Admin'))
+const OrderTracking = lazy(() => import('./pages/OrderTracking'))
+
+const isAdminRoute =
+  window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')
 const trackingMatch = window.location.pathname.match(/^\/order\/([^/]+)\/?$/)
 
 if (!isAdminRoute && !trackingMatch && window.location.pathname !== '/') {
@@ -20,6 +22,14 @@ export function Route() {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Route />
+    <Suspense
+      fallback={
+        <div className="route-loading" role="status">
+          Loading The Daily Commit…
+        </div>
+      }
+    >
+      <Route />
+    </Suspense>
   </React.StrictMode>,
 )

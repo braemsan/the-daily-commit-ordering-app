@@ -7,7 +7,7 @@ import { formatMoney, sugarLabel } from '../lib/format'
 import type { OrderStatus, TrackedOrder } from '../types'
 
 const statusDetails: Record<OrderStatus, { label: string; detail: string }> = {
-  new: { label: 'New', detail: 'Your order is in the queue.' },
+  new: { label: 'New', detail: 'Your order has been received.' },
   preparing: { label: 'Preparing', detail: 'Our baristas are working on your drinks.' },
   ready: { label: 'Ready for Collection', detail: 'Your order is ready at the bar.' },
   completed: { label: 'Completed', detail: 'Your order has been collected. Enjoy!' },
@@ -157,6 +157,7 @@ function OrderConfirmation({
       <a className="secondary-button new-order-link" href="/">
         <CheckCircle2 size={18} /> Place another order
       </a>
+      <p className="customer-thanks">Thank you for supporting The Daily Commit ☕</p>
     </div>
   )
 }
