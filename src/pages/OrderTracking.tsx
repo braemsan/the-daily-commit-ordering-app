@@ -194,14 +194,9 @@ function OrderConfirmation({
       <p className="customer-thanks">Thank you for supporting The Daily Commit ☕</p>
       {order.freeDrinksApplied && (
         <section className="paynow-card" aria-labelledby="event-promotion-title">
-          <span className="paynow-kicker">A little event-day treat</span>
-          <h2 id="event-promotion-title">☕ Your coffee is completely FOC today!</h2>
+          <span className="paynow-kicker">☕ Samsudin's Farmers' Market Party ☕</span>
+          <h2 id="event-promotion-title">Your coffee is completely FOC today!</h2>
           <div className="paynow-message">
-            <p>
-              Thanks for dropping by
-              <br />
-              <strong>The Daily Commit.</strong>
-            </p>
             <p>
               But I won't reject any amount
               <br />

@@ -932,23 +932,20 @@ button:disabled {
 }
 .paynow-card h2 {
   max-width: 470px;
-  margin: 10px auto 18px;
+  margin: 10px auto 14px;
   color: #432a1f;
   font-family: Georgia, serif;
   font-size: clamp(1.55rem, 5vw, 2rem);
   line-height: 1.15;
 }
 .paynow-message {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 .paynow-message p {
   margin: 0;
   color: #6d513d;
   font-size: 0.96rem;
   line-height: 1.55;
-}
-.paynow-message p + p {
-  margin-top: 13px;
 }
 .paynow-qr-image {
   width: clamp(220px, 44vw, 250px);
