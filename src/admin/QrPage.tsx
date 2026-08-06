@@ -32,16 +32,19 @@ export function QrPage() {
           Print A4
         </button>
       </section>
-      <section className="qr-print-sheet">
-        <p className="qr-brand">The Daily Commit</p>
-        <h1>Scan to Order</h1>
-        <p>Freshly crafted coffee, just a few taps away.</p>
-        <span className="qr-event-badge">☕ FREE COFFEE TODAY</span>
-        <div className="qr-code-frame">
-          <QRCodeSVG value={url} size={360} level="H" includeMargin />
+      <section className="qr-print-sheet" aria-label="Printable scan-to-order poster">
+        <div className="qr-poster-artwork">
+          <img
+            src="/assets/scan-to-order-sign-20260809.png"
+            alt="The Daily Commit at Samsudin's Farmers' Market Party — Scan to Order"
+            width="1054"
+            height="1492"
+          />
+          <div className="qr-poster-code" aria-label={`QR code for ${url}`}>
+            <QRCodeSVG value={url} size={420} level="H" includeMargin />
+          </div>
+          <strong className="qr-poster-url">{url}</strong>
         </div>
-        <strong>{url}</strong>
-        <small>SCAN • ORDER • COLLECT WHEN CALLED</small>
       </section>
     </>
   )
