@@ -1283,7 +1283,35 @@ button:disabled {
   width: fit-content;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+}
+.dashboard-toolbar .sound-control {
+  min-width: 124px;
+}
+.dashboard-toolbar .sound-enabled {
+  color: #2f6d40;
+  border-color: #bad9c1;
+  background: #edf7ef;
+}
+.dashboard-toolbar .sound-blocked {
+  color: #983e35;
+  border-color: #e5c1bd;
+  background: #fff3f1;
+}
+.dashboard-toolbar button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.sound-message {
+  margin: -10px 0 16px;
+  padding: 11px 14px;
+  border: 1px solid #dbcdbf;
+  border-radius: 11px;
+  color: #6e574a;
+  background: #fffaf3;
+  font-size: 0.76rem;
+  font-weight: 750;
 }
 .dashboard-toolbar button,
 .order-controls button,

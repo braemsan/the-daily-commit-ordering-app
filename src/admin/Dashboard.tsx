@@ -14,10 +14,14 @@ import { formatMoney } from '../lib/format'
 import type { OrderStatus } from '../types'
 import { changeOrderStatus, getTodayOrders } from './api'
 import { OrderCard } from './OrderCard'
+import { createAudioContext, playCafeChime, resumeAudioContext } from './sound'
 import type { AdminOrder, RealtimeState } from './types'
 import { singaporeDate, statusLabels } from './utils'
 
 type Filter = OrderStatus | 'active' | 'all'
+type AudioState = 'locked' | 'enabled' | 'muted' | 'blocked'
+const soundBlockedMessage =
+  'Sound is blocked by your browser. Tap Enable sound and check your device volume.'
 const filters: { value: Filter; label: string }[] = [
   { value: 'active', label: 'Active' },
   { value: 'new', label: 'New' },
@@ -28,20 +32,26 @@ const filters: { value: Filter; label: string }[] = [
   { value: 'all', label: 'All Today' },
 ]
 
-function soundIsMuted() {
+function soundWasEnabled() {
   try {
-    return window.localStorage.getItem('tdc-order-sound-muted') === '1'
+    return window.localStorage.getItem('tdc-order-sound-enabled') === '1'
   } catch {
     return false
   }
 }
 
-function storeSoundPreference(muted: boolean) {
+function storeSoundPreference(enabled: boolean) {
   try {
-    window.localStorage.setItem('tdc-order-sound-muted', muted ? '1' : '0')
+    window.localStorage.setItem('tdc-order-sound-enabled', enabled ? '1' : '0')
+    window.localStorage.removeItem('tdc-order-sound-muted')
   } catch {
     // Preference persistence is optional when browser storage is unavailable.
   }
+}
+
+function soundDebug(message: string, orderId?: string) {
+  if (!import.meta.env.DEV) return
+  console.info(`[The Daily Commit] ${message}`, orderId ? { orderId } : undefined)
 }
 
 export function Dashboard() {
@@ -53,11 +63,23 @@ export function Dashboard() {
   const [search, setSearch] = useState('')
   const [changing, setChanging] = useState<string | null>(null)
   const [realtime, setRealtime] = useState<RealtimeState>('reconnecting')
-  const [muted, setMuted] = useState(soundIsMuted)
+  const [audioState, setAudioState] = useState<AudioState>('locked')
+  const [soundBusy, setSoundBusy] = useState(false)
+  const [soundMessage, setSoundMessage] = useState<string | null>(() =>
+    soundWasEnabled() ? 'Tap Enable sound to restore notifications after this page refresh.' : null,
+  )
+  const audioStateRef = useRef<AudioState>('locked')
+  const audioContextRef = useRef<AudioContext | null>(null)
   const knownIds = useRef(new Set<string>())
+  const notifiedIds = useRef(new Set<string>())
   const loadedOnce = useRef(false)
   const refreshTimer = useRef<number | null>(null)
   const date = singaporeDate()
+
+  const updateAudioState = useCallback((next: AudioState) => {
+    audioStateRef.current = next
+    setAudioState(next)
+  }, [])
 
   const load = useCallback(
     async (showLoading = false) => {
@@ -77,27 +99,108 @@ export function Dashboard() {
     [date],
   )
 
-  const notify = useCallback(() => {
-    if (muted) return
-    try {
-      const AudioContextClass = window.AudioContext
-      const context = new AudioContextClass()
-      void context.resume()
-      const oscillator = context.createOscillator()
-      const gain = context.createGain()
-      oscillator.frequency.setValueAtTime(740, context.currentTime)
-      oscillator.frequency.exponentialRampToValueAtTime(980, context.currentTime + 0.16)
-      gain.gain.setValueAtTime(0.0001, context.currentTime)
-      gain.gain.exponentialRampToValueAtTime(0.18, context.currentTime + 0.02)
-      gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.28)
-      oscillator.connect(gain).connect(context.destination)
-      oscillator.start()
-      oscillator.stop(context.currentTime + 0.3)
-      oscillator.addEventListener('ended', () => void context.close())
-    } catch {
-      /* Autoplay may be blocked until staff interacts with the page. */
+  const notify = useCallback(
+    async (orderId: string) => {
+      if (audioStateRef.current !== 'enabled') {
+        soundDebug('Sound skipped: notifications are not enabled', orderId)
+        return
+      }
+      soundDebug('Sound attempted', orderId)
+      const context = audioContextRef.current
+      if (!context) {
+        updateAudioState('blocked')
+        storeSoundPreference(false)
+        setSoundMessage(soundBlockedMessage)
+        soundDebug('Sound blocked: no unlocked AudioContext', orderId)
+        return
+      }
+      try {
+        await playCafeChime(context)
+        soundDebug('Sound played', orderId)
+      } catch {
+        updateAudioState('blocked')
+        storeSoundPreference(false)
+        setSoundMessage(soundBlockedMessage)
+        soundDebug('Sound blocked by browser', orderId)
+      }
+    },
+    [updateAudioState],
+  )
+
+  const playUserInitiatedChime = useCallback(
+    async (keepMuted = false) => {
+      setSoundBusy(true)
+      setSoundMessage(null)
+      soundDebug('Sound attempted from staff interaction')
+      try {
+        let context = audioContextRef.current
+        if (!context || context.state === 'closed') {
+          context = createAudioContext()
+          audioContextRef.current = context
+        }
+        await playCafeChime(context)
+        if (keepMuted) {
+          updateAudioState('muted')
+          storeSoundPreference(false)
+        } else {
+          updateAudioState('enabled')
+          storeSoundPreference(true)
+        }
+        soundDebug('Sound played from staff interaction')
+      } catch {
+        updateAudioState('blocked')
+        storeSoundPreference(false)
+        setSoundMessage(soundBlockedMessage)
+        soundDebug('Sound blocked by browser')
+      } finally {
+        setSoundBusy(false)
+      }
+    },
+    [updateAudioState],
+  )
+
+  function handleSoundControl() {
+    if (audioStateRef.current === 'enabled') {
+      updateAudioState('muted')
+      storeSoundPreference(false)
+      setSoundMessage(null)
+      return
     }
-  }, [muted])
+    void playUserInitiatedChime()
+  }
+
+  function testSound() {
+    void playUserInitiatedChime(audioStateRef.current === 'muted')
+  }
+
+  useEffect(() => {
+    function visibilityChanged() {
+      if (
+        document.visibilityState !== 'visible' ||
+        audioStateRef.current !== 'enabled' ||
+        !audioContextRef.current
+      )
+        return
+      void resumeAudioContext(audioContextRef.current)
+        .then(() => soundDebug('AudioContext resumed after tab became visible'))
+        .catch(() => {
+          updateAudioState('blocked')
+          storeSoundPreference(false)
+          setSoundMessage(soundBlockedMessage)
+          soundDebug('Sound blocked while resuming visible tab')
+        })
+    }
+    document.addEventListener('visibilitychange', visibilityChanged)
+    return () => document.removeEventListener('visibilitychange', visibilityChanged)
+  }, [updateAudioState])
+
+  useEffect(() => {
+    return () => {
+      const context = audioContextRef.current
+      audioContextRef.current = null
+      if (context && context.state !== 'closed') void context.close().catch(() => undefined)
+    }
+  }, [])
 
   useEffect(() => {
     void load(true)
@@ -114,9 +217,18 @@ export function Dashboard() {
       .channel('staff-orders-live')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
         const id = typeof payload.new.id === 'string' ? payload.new.id : null
-        if (id && loadedOnce.current && !knownIds.current.has(id)) {
+        if (!id) {
+          soundDebug('New INSERT received without an order ID')
+        } else if (!loadedOnce.current) {
           knownIds.current.add(id)
-          notify()
+          soundDebug('New INSERT received before initial fetch; notification skipped', id)
+        } else if (knownIds.current.has(id) || notifiedIds.current.has(id)) {
+          soundDebug('Duplicate event ignored', id)
+        } else {
+          soundDebug('New INSERT received', id)
+          knownIds.current.add(id)
+          notifiedIds.current.add(id)
+          void notify(id)
         }
         scheduleRefresh()
       })
@@ -131,8 +243,10 @@ export function Dashboard() {
         scheduleRefresh,
       )
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') setRealtime('connected')
-        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setRealtime('reconnecting')
+        if (status === 'SUBSCRIBED') {
+          setRealtime('connected')
+          soundDebug('Realtime connected')
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setRealtime('reconnecting')
         else if (status === 'CLOSED') setRealtime('disconnected')
       })
     return () => {
@@ -156,14 +270,6 @@ export function Dashboard() {
       window.removeEventListener('offline', offline)
     }
   }, [load])
-
-  function toggleMuted() {
-    setMuted((value) => {
-      const next = !value
-      storeSoundPreference(next)
-      return next
-    })
-  }
 
   async function updateStatus(order: AdminOrder, status: OrderStatus) {
     if (
@@ -224,14 +330,33 @@ export function Dashboard() {
               ? 'Reconnecting…'
               : 'Disconnected'}
         </span>
-        <button type="button" onClick={toggleMuted}>
-          {muted ? <BellOff /> : <Bell />}
-          {muted ? 'Sound off' : 'Sound on'}
+        <button
+          className={`sound-control sound-${audioState}`}
+          type="button"
+          disabled={soundBusy}
+          onClick={handleSoundControl}
+        >
+          {audioState === 'enabled' ? <Bell /> : <BellOff />}
+          {audioState === 'locked'
+            ? 'Enable sound'
+            : audioState === 'enabled'
+              ? 'Sound on'
+              : audioState === 'muted'
+                ? 'Sound muted'
+                : 'Sound blocked'}
+        </button>
+        <button type="button" disabled={soundBusy} onClick={testSound}>
+          Test sound
         </button>
         <button type="button" onClick={() => void load(true)}>
           <RefreshCw /> Refresh
         </button>
       </div>
+      {soundMessage && (
+        <div className="sound-message" role={audioState === 'blocked' ? 'alert' : 'status'}>
+          {soundMessage}
+        </div>
+      )}
       {error && (
         <div className="admin-error" role="alert">
           {error}
