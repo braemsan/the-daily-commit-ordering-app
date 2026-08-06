@@ -36,11 +36,12 @@ export function QrPage() {
         <p className="qr-brand">The Daily Commit</p>
         <h1>Scan to Order</h1>
         <p>Freshly crafted coffee, just a few taps away.</p>
+        <span className="qr-event-badge">☕ FREE COFFEE TODAY</span>
         <div className="qr-code-frame">
           <QRCodeSVG value={url} size={360} level="H" includeMargin />
         </div>
         <strong>{url}</strong>
-        <small>Order · Pay at booth · Collect when called</small>
+        <small>SCAN • ORDER • COLLECT WHEN CALLED</small>
       </section>
     </>
   )
