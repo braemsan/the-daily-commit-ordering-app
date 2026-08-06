@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { envError } from '../env'
-import type { CartItem, MenuItem, PlaceOrderResult, TrackedOrder } from '../types'
+import type { CartItem, EventSettings, MenuItem, PlaceOrderResult, TrackedOrder } from '../types'
 import { orderStatuses } from '../types'
 import { supabase } from '../lib'
 
@@ -24,6 +24,15 @@ const menuRowSchema = z.object({
   display_order: z.number(),
 })
 
+const eventSettingsSchema = z.object({
+  free_drinks_enabled: z.boolean(),
+  event_title: z.string(),
+  event_message: z.string(),
+  paynow_number: z.string(),
+  starts_at: z.string().nullable(),
+  ends_at: z.string().nullable(),
+})
+
 const placeOrderRowSchema = z.object({
   order_number: z.string(),
   tracking_token: z.uuid(),
@@ -37,6 +46,11 @@ const trackedOrderSchema = z.object({
   customer_notes: z.string().nullable(),
   status: z.enum(orderStatuses),
   total: money,
+  regular_total: money,
+  free_drinks_applied: z.boolean(),
+  event_title: z.string().nullable(),
+  event_message: z.string().nullable(),
+  paynow_number: z.string().nullable(),
   created_at: z.string(),
   items: z.array(
     z.object({
@@ -44,7 +58,9 @@ const trackedOrderSchema = z.object({
       quantity: z.number().int().positive(),
       sugar_option: z.enum(['sugar', 'no_sugar']).nullable(),
       unit_price: money,
+      regular_unit_price: money,
       line_total: money,
+      regular_line_total: money,
     }),
   ),
 })
@@ -87,6 +103,29 @@ export async function fetchMenu(): Promise<MenuItem[]> {
       available: row.available,
       displayOrder: row.display_order,
     }))
+}
+
+export async function fetchEventSettings(): Promise<EventSettings> {
+  const { data, error } = await client()
+    .from('event_settings')
+    .select('free_drinks_enabled, event_title, event_message, paynow_number, starts_at, ends_at')
+    .eq('id', 1)
+    .single()
+
+  if (error) throw new Error(messageFor(error))
+  const row = eventSettingsSchema.parse(data)
+  const now = Date.now()
+  const afterStart = row.starts_at === null || now >= Date.parse(row.starts_at)
+  const beforeEnd = row.ends_at === null || now < Date.parse(row.ends_at)
+  return {
+    freeDrinksEnabled: row.free_drinks_enabled,
+    isActive: row.free_drinks_enabled && afterStart && beforeEnd,
+    eventTitle: row.event_title,
+    eventMessage: row.event_message,
+    paynowNumber: row.paynow_number,
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
+  }
 }
 
 export async function submitOrder(input: {
@@ -132,13 +171,20 @@ export async function fetchTrackedOrder(trackingToken: string): Promise<TrackedO
     customerNotes: order.customer_notes,
     status: order.status,
     total: order.total,
+    regularTotal: order.regular_total,
+    freeDrinksApplied: order.free_drinks_applied,
+    eventTitle: order.event_title,
+    eventMessage: order.event_message,
+    paynowNumber: order.paynow_number,
     createdAt: order.created_at,
     items: order.items.map((item) => ({
       name: item.name,
       quantity: item.quantity,
       sugarOption: item.sugar_option,
       unitPrice: item.unit_price,
+      regularUnitPrice: item.regular_unit_price,
       lineTotal: item.line_total,
+      regularLineTotal: item.regular_line_total,
     })),
   }
 }

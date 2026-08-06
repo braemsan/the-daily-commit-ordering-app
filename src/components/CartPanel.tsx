@@ -4,11 +4,13 @@ import type { CartItem } from '../types'
 
 export function CartPanel({
   items,
-  subtotal,
+  regularSubtotal,
+  freeDrinks,
   onChangeQuantity,
 }: {
   items: CartItem[]
-  subtotal: number
+  regularSubtotal: number
+  freeDrinks: boolean
   onChangeQuantity: (key: string, quantity: number) => void
 }) {
   const count = items.reduce((sum, item) => sum + item.quantity, 0)
@@ -41,7 +43,17 @@ export function CartPanel({
                   <h3>{item.name}</h3>
                   {item.sugarOption && <p>{sugarLabel(item.sugarOption)}</p>}
                 </div>
-                <strong>{formatMoney(item.unitPrice * item.quantity)}</strong>
+                {freeDrinks ? (
+                  <div
+                    className="cart-event-price"
+                    aria-label={`${formatMoney(item.unitPrice * item.quantity)} normally, free today`}
+                  >
+                    <span>{formatMoney(item.unitPrice * item.quantity)}</span>
+                    <strong>$0</strong>
+                  </div>
+                ) : (
+                  <strong>{formatMoney(item.unitPrice * item.quantity)}</strong>
+                )}
               </div>
               <div className="cart-item-actions" aria-label={`Quantity for ${item.name}`}>
                 <button
@@ -63,10 +75,23 @@ export function CartPanel({
               </div>
             </article>
           ))}
-          <div className="subtotal-row">
-            <span>Subtotal</span>
-            <strong>{formatMoney(subtotal)}</strong>
-          </div>
+          {freeDrinks ? (
+            <div className="event-totals">
+              <div>
+                <span>Regular total</span>
+                <span className="regular-price-struck">{formatMoney(regularSubtotal)}</span>
+              </div>
+              <div>
+                <strong>Today’s total</strong>
+                <strong>$0</strong>
+              </div>
+            </div>
+          ) : (
+            <div className="subtotal-row">
+              <span>Subtotal</span>
+              <strong>{formatMoney(regularSubtotal)}</strong>
+            </div>
+          )}
         </div>
       )}
     </section>

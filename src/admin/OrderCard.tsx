@@ -58,10 +58,23 @@ export function OrderCard({
           </span>
         </div>
       )}
-      <div className="staff-order-total">
-        <span>Total</span>
-        <strong>{formatMoney(order.total)}</strong>
-      </div>
+      {order.freeDrinksApplied ? (
+        <div className="staff-event-totals">
+          <div>
+            <span>Regular value</span>
+            <strong>{formatMoney(order.regularTotal)}</strong>
+          </div>
+          <div>
+            <span>Charged</span>
+            <strong>{formatMoney(order.total)}</strong>
+          </div>
+        </div>
+      ) : (
+        <div className="staff-order-total">
+          <span>Total</span>
+          <strong>{formatMoney(order.total)}</strong>
+        </div>
+      )}
       {!readOnly && (action || canCancel) && (
         <div className="staff-order-actions">
           {action && (

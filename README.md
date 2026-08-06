@@ -63,6 +63,33 @@ Supabase, open the staff menu page at `/admin/menu` to review them.
 - Administrators can update prices, menu copy, categories, availability, and display order.
 - Staff-role accounts can view orders but cannot edit the menu.
 
+### Free-drinks event pricing
+
+The single `event_settings` row controls temporary free-drinks pricing without changing
+`menu_items.price`. When the setting is enabled and its optional time window is active, the
+database snapshots each item's regular price but charges SGD 0 through the transactional
+`place_order` function. Existing and future paid orders retain their own regular and charged price
+snapshots.
+
+An active administrator can manage the toggle, event copy, PayNow number, and optional start/end
+times from `/admin/menu`. Turning the toggle off resumes normal server-calculated pricing
+immediately; no menu prices need to be restored.
+
+For a one-time privileged operation in the Supabase SQL Editor, use:
+
+```sql
+-- Enable free-drinks mode (subject to starts_at and ends_at when set).
+update public.event_settings
+set free_drinks_enabled = true;
+
+-- Disable it and resume normal pricing.
+update public.event_settings
+set free_drinks_enabled = false;
+```
+
+Browser clients cannot run these direct updates. The admin interface uses an authenticated RPC
+that verifies the caller has an active `admin` staff profile.
+
 ## 4. Run locally
 
 Use Node.js 22 or newer. The repository includes an `.nvmrc` file for version managers such as

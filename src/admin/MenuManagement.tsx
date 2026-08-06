@@ -1,19 +1,34 @@
-import { CheckCircle2, Coffee, Save } from 'lucide-react'
+import { CheckCircle2, Coffee, Gift, Save } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { formatMoney } from '../lib/format'
-import { getMenuForStaff, saveMenuItem } from './api'
-import type { AdminMenuItem } from './types'
+import { getEventSettingsForAdmin, getMenuForStaff, saveEventSettings, saveMenuItem } from './api'
+import type { AdminEventSettings, AdminMenuItem } from './types'
+
+function localDateTime(iso: string | null) {
+  if (!iso) return ''
+  const date = new Date(iso)
+  const offset = date.getTimezoneOffset() * 60_000
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16)
+}
+
+function isoDateTime(value: string) {
+  return value ? new Date(value).toISOString() : null
+}
 
 export function MenuManagement() {
   const [items, setItems] = useState<AdminMenuItem[]>([])
+  const [eventSettings, setEventSettings] = useState<AdminEventSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<number | null>(null)
+  const [savingEvent, setSavingEvent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
   async function load() {
     try {
-      setItems(await getMenuForStaff())
+      const [menu, event] = await Promise.all([getMenuForStaff(), getEventSettingsForAdmin()])
+      setItems(menu)
+      setEventSettings(event)
       setError(null)
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Menu could not be loaded.')
@@ -54,6 +69,39 @@ export function MenuManagement() {
       setSaving(null)
     }
   }
+
+  async function saveEvent() {
+    if (!eventSettings) return
+    if (!eventSettings.eventTitle.trim() || !eventSettings.eventMessage.trim()) {
+      setError('Event title and message are required.')
+      return
+    }
+    if (!eventSettings.paynowNumber.trim()) {
+      setError('PayNow number is required.')
+      return
+    }
+    if (
+      !eventSettings.freeDrinksEnabled &&
+      !window.confirm('Disable free-drinks mode and resume normal server pricing?')
+    )
+      return
+    setSavingEvent(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      const saved = await saveEventSettings(eventSettings)
+      setEventSettings(saved)
+      setSuccess(
+        saved.freeDrinksEnabled
+          ? 'Free-drinks event settings saved.'
+          : 'Free-drinks mode disabled. Normal pricing has resumed.',
+      )
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Event settings could not be saved.')
+    } finally {
+      setSavingEvent(false)
+    }
+  }
   if (loading)
     return (
       <div className="menu-admin-grid">
@@ -78,6 +126,99 @@ export function MenuManagement() {
           <CheckCircle2 />
           {success}
         </div>
+      )}
+      {eventSettings && (
+        <section className="event-settings-card" aria-labelledby="event-settings-title">
+          <header>
+            <div className="event-settings-icon">
+              <Gift />
+            </div>
+            <div>
+              <p>Event pricing</p>
+              <h2 id="event-settings-title">Free-drinks mode</h2>
+              <span>Normal menu prices are preserved while charged prices become $0.</span>
+            </div>
+            <label className="availability-toggle event-toggle">
+              <input
+                type="checkbox"
+                checked={eventSettings.freeDrinksEnabled}
+                onChange={(event) =>
+                  setEventSettings({
+                    ...eventSettings,
+                    freeDrinksEnabled: event.target.checked,
+                  })
+                }
+              />
+              <span />
+              {eventSettings.freeDrinksEnabled ? 'Enabled' : 'Disabled'}
+            </label>
+          </header>
+          <div className="event-settings-form">
+            <label>
+              Event title
+              <input
+                value={eventSettings.eventTitle}
+                maxLength={100}
+                onChange={(event) =>
+                  setEventSettings({ ...eventSettings, eventTitle: event.target.value })
+                }
+              />
+            </label>
+            <label>
+              PayNow number
+              <input
+                value={eventSettings.paynowNumber}
+                maxLength={30}
+                inputMode="numeric"
+                onChange={(event) =>
+                  setEventSettings({ ...eventSettings, paynowNumber: event.target.value })
+                }
+              />
+            </label>
+            <label className="wide">
+              Event message
+              <textarea
+                value={eventSettings.eventMessage}
+                maxLength={300}
+                onChange={(event) =>
+                  setEventSettings({ ...eventSettings, eventMessage: event.target.value })
+                }
+              />
+            </label>
+            <label>
+              Starts (optional)
+              <input
+                type="datetime-local"
+                value={localDateTime(eventSettings.startsAt)}
+                onChange={(event) =>
+                  setEventSettings({ ...eventSettings, startsAt: isoDateTime(event.target.value) })
+                }
+              />
+            </label>
+            <label>
+              Ends (optional)
+              <input
+                type="datetime-local"
+                value={localDateTime(eventSettings.endsAt)}
+                onChange={(event) =>
+                  setEventSettings({ ...eventSettings, endsAt: isoDateTime(event.target.value) })
+                }
+              />
+            </label>
+          </div>
+          <footer>
+            <p>The database applies the toggle and time window when each order is submitted.</p>
+            <button
+              className="admin-primary-button"
+              type="button"
+              disabled={savingEvent}
+              onClick={() => void saveEvent()}
+            >
+              <Save />
+              {savingEvent ? 'Saving…' : 'Save event settings'}
+            </button>
+          </footer>
+        </section>
       )}
       {items.length === 0 ? (
         <div className="admin-empty">

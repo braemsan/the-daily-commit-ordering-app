@@ -89,8 +89,22 @@ function OrderConfirmation({
   duplicate: boolean
   onRefresh: () => void
 }) {
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle')
   const status = statusDetails[order.status]
   const ready = order.status === 'ready'
+  const paynowNumber = order.paynowNumber ?? '87972700'
+  const displayedPaynow = paynowNumber.replace(/\s/g, '').replace(/(\d{4})(?=\d)/g, '$1 ')
+
+  async function copyPaynow() {
+    try {
+      await navigator.clipboard.writeText(paynowNumber.replace(/\s/g, ''))
+      setCopyStatus('copied')
+    } catch {
+      setCopyStatus('failed')
+    }
+    window.setTimeout(() => setCopyStatus('idle'), 2500)
+  }
+
   return (
     <div className="confirmation-wrap">
       {duplicate && (
@@ -139,7 +153,17 @@ function OrderConfirmation({
                 <h3>{item.name}</h3>
                 {item.sugarOption && <p>{sugarLabel(item.sugarOption)}</p>}
               </div>
-              <span>{formatMoney(item.lineTotal)}</span>
+              {order.freeDrinksApplied ? (
+                <span
+                  className="receipt-event-price"
+                  aria-label={`${formatMoney(item.regularLineTotal)} normally, charged ${formatMoney(item.lineTotal)}`}
+                >
+                  <s>{formatMoney(item.regularLineTotal)}</s>
+                  <strong>$0</strong>
+                </span>
+              ) : (
+                <span>{formatMoney(item.lineTotal)}</span>
+              )}
             </div>
           ))}
         </div>
@@ -149,11 +173,48 @@ function OrderConfirmation({
             <p>{order.customerNotes}</p>
           </div>
         )}
-        <div className="receipt-total">
-          <span>Total</span>
-          <strong>{formatMoney(order.total)}</strong>
-        </div>
+        {order.freeDrinksApplied ? (
+          <div className="receipt-event-totals">
+            <div>
+              <span>Regular total</span>
+              <s>{formatMoney(order.regularTotal)}</s>
+            </div>
+            <div>
+              <strong>Today’s total</strong>
+              <strong>$0</strong>
+            </div>
+          </div>
+        ) : (
+          <div className="receipt-total">
+            <span>Total</span>
+            <strong>{formatMoney(order.total)}</strong>
+          </div>
+        )}
       </section>
+      {order.freeDrinksApplied && (
+        <section className="paynow-card" aria-labelledby="event-promotion-title">
+          <span className="paynow-kicker">Free drinks event</span>
+          <h2 id="event-promotion-title">Today's drinks are on us ☕</h2>
+          <p>All drinks are free for today's event.</p>
+          <p>Feeling generous? I won't say no to a little PayNow love 😉</p>
+          <div className="paynow-copy-row">
+            <div>
+              <span>PayNow</span>
+              <strong>{displayedPaynow}</strong>
+            </div>
+            <button type="button" onClick={() => void copyPaynow()}>
+              Copy
+            </button>
+          </div>
+          {copyStatus !== 'idle' && (
+            <p className={copyStatus === 'copied' ? 'copy-success' : 'copy-error'} role="status">
+              {copyStatus === 'copied'
+                ? 'PayNow number copied'
+                : `Couldn’t copy automatically. Please copy ${displayedPaynow}.`}
+            </p>
+          )}
+        </section>
+      )}
       <a className="secondary-button new-order-link" href="/">
         <CheckCircle2 size={18} /> Place another order
       </a>

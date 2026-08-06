@@ -15,7 +15,9 @@ export interface AdminOrderItem {
   quantity: number
   sugarOption: SugarOption | null
   unitPrice: number
+  regularUnitPrice: number
   lineTotal: number
+  regularLineTotal: number
 }
 
 export interface AuditEntry {
@@ -33,6 +35,8 @@ export interface AdminOrder {
   customerNotes: string | null
   status: OrderStatus
   total: number
+  regularTotal: number
+  freeDrinksApplied: boolean
   orderDate: string
   createdAt: string
   updatedAt: string
@@ -49,6 +53,16 @@ export interface AdminMenuItem {
   requiresSugar: boolean
   available: boolean
   displayOrder: number
+  updatedAt: string
+}
+
+export interface AdminEventSettings {
+  freeDrinksEnabled: boolean
+  eventTitle: string
+  eventMessage: string
+  paynowNumber: string
+  startsAt: string | null
+  endsAt: string | null
   updatedAt: string
 }
 

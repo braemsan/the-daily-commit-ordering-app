@@ -206,6 +206,7 @@ export function Dashboard() {
   const count = (status: OrderStatus) => orders.filter((order) => order.status === status).length
   const paid = orders.filter((order) => order.status !== 'cancelled')
   const revenue = paid.reduce((sum, order) => sum + order.total, 0)
+  const regularValue = paid.reduce((sum, order) => sum + order.regularTotal, 0)
 
   return (
     <>
@@ -248,6 +249,7 @@ export function Dashboard() {
         <Metric label="Completed" value={count('completed')} />
         <Metric label="Total orders" value={orders.length} icon={<ShoppingBag />} />
         <Metric label="Revenue" value={formatMoney(revenue)} icon={<CircleDollarSign />} />
+        <Metric label="Regular menu value" value={formatMoney(regularValue)} />
         <Metric
           label="Average value"
           value={formatMoney(paid.length ? revenue / paid.length : 0)}

@@ -5,9 +5,11 @@ import type { MenuItem, SugarOption } from '../types'
 
 export function MenuCard({
   item,
+  freeDrinks,
   onAdd,
 }: {
   item: MenuItem
+  freeDrinks: boolean
   onAdd: (sugar: SugarOption | null) => void
 }) {
   const [sugar, setSugar] = useState<SugarOption | null>(null)
@@ -25,7 +27,18 @@ export function MenuCard({
       <div className="menu-item-copy">
         <div className="menu-title-row">
           <h3>{item.name}</h3>
-          <strong>{formatMoney(item.price)}</strong>
+          {freeDrinks ? (
+            <div
+              className="event-price"
+              aria-label={`${formatMoney(item.price)} normally, free today`}
+            >
+              <span>{formatMoney(item.price)}</span>
+              <strong>$0</strong>
+              <small>Free today</small>
+            </div>
+          ) : (
+            <strong>{formatMoney(item.price)}</strong>
+          )}
         </div>
         <p>{item.description}</p>
       </div>

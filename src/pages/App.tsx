@@ -4,12 +4,12 @@ import { CartPanel } from '../components/CartPanel'
 import { CheckoutForm } from '../components/CheckoutForm'
 import { EmptyMenuState, ErrorState, LoadingState } from '../components/AsyncState'
 import { MenuCard } from '../components/MenuCard'
-import { ConfigurationError, fetchMenu, submitOrder } from '../lib/api'
-import type { CartItem, MenuItem, SugarOption } from '../types'
+import { ConfigurationError, fetchEventSettings, fetchMenu, submitOrder } from '../lib/api'
+import type { CartItem, EventSettings, MenuItem, SugarOption } from '../types'
 
 type MenuState =
   | { kind: 'loading' }
-  | { kind: 'ready'; items: MenuItem[] }
+  | { kind: 'ready'; items: MenuItem[]; event: EventSettings }
   | { kind: 'error'; message: string; configuration: boolean }
 
 export default function App() {
@@ -24,8 +24,8 @@ export default function App() {
   async function loadMenu() {
     setMenuState({ kind: 'loading' })
     try {
-      const items = await fetchMenu()
-      setMenuState({ kind: 'ready', items })
+      const [items, event] = await Promise.all([fetchMenu(), fetchEventSettings()])
+      setMenuState({ kind: 'ready', items, event })
     } catch (error) {
       setMenuState({
         kind: 'error',
@@ -42,6 +42,7 @@ export default function App() {
   const items = useMemo(() => Object.values(cart), [cart])
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
+  const freeDrinks = menuState.kind === 'ready' && menuState.event.isActive
 
   function addItem(menuItem: MenuItem, sugarOption: SugarOption | null) {
     const key = `${menuItem.id}:${sugarOption ?? 'standard'}`
@@ -120,6 +121,14 @@ export default function App() {
             <p>Choose your favourites and we’ll have them ready at the bar.</p>
           </div>
 
+          {menuState.kind === 'ready' && menuState.event.isActive && (
+            <section className="event-banner" aria-label="Free drinks event">
+              <span>Free today</span>
+              <h2>{menuState.event.eventTitle}</h2>
+              <p>{menuState.event.eventMessage}</p>
+            </section>
+          )}
+
           {menuState.kind === 'loading' && <LoadingState />}
           {menuState.kind === 'error' && (
             <ErrorState
@@ -145,7 +154,12 @@ export default function App() {
               </div>
               <div className="menu-list">
                 {group.items.map((item) => (
-                  <MenuCard key={item.id} item={item} onAdd={(sugar) => addItem(item, sugar)} />
+                  <MenuCard
+                    key={item.id}
+                    item={item}
+                    freeDrinks={freeDrinks}
+                    onAdd={(sugar) => addItem(item, sugar)}
+                  />
                 ))}
               </div>
             </section>
@@ -153,7 +167,12 @@ export default function App() {
         </section>
 
         <aside className="checkout-column">
-          <CartPanel items={items} subtotal={subtotal} onChangeQuantity={changeQuantity} />
+          <CartPanel
+            items={items}
+            regularSubtotal={subtotal}
+            freeDrinks={freeDrinks}
+            onChangeQuantity={changeQuantity}
+          />
           <CheckoutForm
             name={name}
             notes={notes}

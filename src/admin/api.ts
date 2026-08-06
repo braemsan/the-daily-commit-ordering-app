@@ -1,7 +1,13 @@
 import { z } from 'zod'
 import { supabase } from '../lib'
 import { orderStatuses } from '../types'
-import type { AdminMenuItem, AdminOrder, HistoryPage, StaffProfile } from './types'
+import type {
+  AdminEventSettings,
+  AdminMenuItem,
+  AdminOrder,
+  HistoryPage,
+  StaffProfile,
+} from './types'
 
 const money = z.union([z.number(), z.string()]).transform(Number)
 const staffSchema = z.object({
@@ -16,6 +22,7 @@ const itemSchema = z.object({
   quantity: z.number(),
   sugar_option: z.enum(['sugar', 'no_sugar']).nullable(),
   unit_price: money,
+  regular_unit_price: money,
   line_total: money,
 })
 const auditSchema = z.object({
@@ -32,6 +39,8 @@ const orderSchema = z.object({
   customer_notes: z.string().nullable(),
   status: z.enum(orderStatuses),
   total: money,
+  regular_total: money,
+  free_drinks_applied: z.boolean(),
   order_date: z.string(),
   created_at: z.string(),
   updated_at: z.string(),
@@ -47,6 +56,15 @@ const menuSchema = z.object({
   requires_sugar: z.boolean(),
   available: z.boolean(),
   display_order: z.number(),
+  updated_at: z.string(),
+})
+const eventSettingsSchema = z.object({
+  free_drinks_enabled: z.boolean(),
+  event_title: z.string(),
+  event_message: z.string(),
+  paynow_number: z.string(),
+  starts_at: z.string().nullable(),
+  ends_at: z.string().nullable(),
   updated_at: z.string(),
 })
 
@@ -73,6 +91,8 @@ function mapOrder(value: unknown): AdminOrder {
     customerNotes: row.customer_notes,
     status: row.status,
     total: row.total,
+    regularTotal: row.regular_total,
+    freeDrinksApplied: row.free_drinks_applied,
     orderDate: row.order_date,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -82,7 +102,9 @@ function mapOrder(value: unknown): AdminOrder {
       quantity: item.quantity,
       sugarOption: item.sugar_option,
       unitPrice: item.unit_price,
+      regularUnitPrice: item.regular_unit_price,
       lineTotal: item.line_total,
+      regularLineTotal: item.regular_unit_price * item.quantity,
     })),
     audit: row.order_status_audit.map((entry) => ({
       id: entry.id,
@@ -96,8 +118,9 @@ function mapOrder(value: unknown): AdminOrder {
 
 const orderSelect = `
   id, order_number, customer_name, customer_notes, status, total,
+  regular_total, free_drinks_applied,
   order_date, created_at, updated_at,
-  order_items(id, item_name, quantity, sugar_option, unit_price, line_total),
+  order_items(id, item_name, quantity, sugar_option, unit_price, regular_unit_price, line_total),
   order_status_audit(id, previous_status, new_status, changed_by, changed_at)
 `
 
@@ -188,6 +211,44 @@ export async function saveMenuItem(item: AdminMenuItem): Promise<AdminMenuItem> 
     displayOrder: row.display_order,
     updatedAt: row.updated_at,
   }
+}
+
+function mapEventSettings(value: unknown): AdminEventSettings {
+  const row = eventSettingsSchema.parse(value)
+  return {
+    freeDrinksEnabled: row.free_drinks_enabled,
+    eventTitle: row.event_title,
+    eventMessage: row.event_message,
+    paynowNumber: row.paynow_number,
+    startsAt: row.starts_at,
+    endsAt: row.ends_at,
+    updatedAt: row.updated_at,
+  }
+}
+
+export async function getEventSettingsForAdmin(): Promise<AdminEventSettings> {
+  const { data, error } = await db()
+    .from('event_settings')
+    .select(
+      'free_drinks_enabled, event_title, event_message, paynow_number, starts_at, ends_at, updated_at',
+    )
+    .eq('id', 1)
+    .single()
+  fail(error)
+  return mapEventSettings(data)
+}
+
+export async function saveEventSettings(settings: AdminEventSettings): Promise<AdminEventSettings> {
+  const { data, error } = await db().rpc('update_event_settings', {
+    p_free_drinks_enabled: settings.freeDrinksEnabled,
+    p_event_title: settings.eventTitle,
+    p_event_message: settings.eventMessage,
+    p_paynow_number: settings.paynowNumber,
+    p_starts_at: settings.startsAt,
+    p_ends_at: settings.endsAt,
+  })
+  fail(error)
+  return mapEventSettings(data)
 }
 
 export async function getOrderHistory(input: {

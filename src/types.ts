@@ -22,6 +22,16 @@ export interface CartItem {
   unitPrice: number
 }
 
+export interface EventSettings {
+  freeDrinksEnabled: boolean
+  isActive: boolean
+  eventTitle: string
+  eventMessage: string
+  paynowNumber: string
+  startsAt: string | null
+  endsAt: string | null
+}
+
 export interface PlaceOrderResult {
   orderNumber: string
   trackingToken: string
@@ -34,7 +44,9 @@ export interface TrackedOrderItem {
   quantity: number
   sugarOption: SugarOption | null
   unitPrice: number
+  regularUnitPrice: number
   lineTotal: number
+  regularLineTotal: number
 }
 
 export interface TrackedOrder {
@@ -43,6 +55,11 @@ export interface TrackedOrder {
   customerNotes: string | null
   status: OrderStatus
   total: number
+  regularTotal: number
+  freeDrinksApplied: boolean
+  eventTitle: string | null
+  eventMessage: string | null
+  paynowNumber: string | null
   createdAt: string
   items: TrackedOrderItem[]
 }
