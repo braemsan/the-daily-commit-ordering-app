@@ -51,7 +51,7 @@ cp .env.example .env
 Update the values:
 
 ```env
-VITE_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+VITE_SUPABASE_URL=https://rfxowcdtkqfjjakmgnhv.supabase.co
 VITE_SUPABASE_ANON_KEY=YOUR_ANON_KEY
 ```
 
@@ -145,27 +145,38 @@ npm run check
 This checks formatting, lint rules, TypeScript, and the production build. GitHub Actions runs the
 same command for pushes and pull requests targeting `main`.
 
-## 5. Deploy
+## 5. Deploy to Cloudflare Pages
 
-Recommended: Cloudflare Pages, Vercel, or Netlify.
+Connect this repository to a Cloudflare Pages project and use these build settings:
 
-Build settings:
-
+- Production branch: `main`
 - Build command: `npm run build`
 - Output directory: `dist`
-- Add the two environment variables from `.env` in your hosting dashboard.
-- In **Supabase Authentication → URL Configuration**, set the Site URL to the deployed origin and
-  add the deployed `/admin/login` URL to the redirect allow list.
 
-For single-page routing, configure the host to rewrite all paths to `index.html`.
+Configure these environment variables for both production and preview deployments:
 
-### Cloudflare Pages rewrite
+```env
+VITE_SUPABASE_URL=https://rfxowcdtkqfjjakmgnhv.supabase.co
+VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+```
 
-Create `public/_redirects` before building:
+The publishable/anon key is intended for browser use; never configure a Supabase service-role key
+as a Vite environment variable.
+
+The committed `public/_redirects` file provides the SPA fallback required for direct visits to
+routes such as `/admin/login` and `/order/:trackingToken`:
 
 ```text
 /* /index.html 200
 ```
+
+Vite copies this file into `dist` during the build, so no Pages Function or additional routing
+configuration is required.
+
+After the first deployment, in **Supabase Authentication → URL Configuration**, set the Site URL
+to the deployed Cloudflare Pages origin and add its `/admin/login` URL to the redirect allow list.
+
+### Other static hosts
 
 ### Netlify rewrite
 
