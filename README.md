@@ -4,8 +4,8 @@ A simple booth ordering system:
 
 - Customers scan a QR code and place an order on their phone.
 - New orders appear live on the iPad dashboard.
-- Staff can mark orders as New, Preparing, Completed, or Cancelled.
-- Sugar / no-sugar choices are available for Hot Americano, Hot Latte, Iced Americano, and Iced Latte.
+- Customers can track orders through New, Preparing, Ready, Completed, and Cancelled states.
+- Drinks that require a sugar choice enforce Sugar or No Sugar before they can be added.
 - The app does not collect online payment. Customers pay at the booth.
 
 ## Technology
@@ -23,9 +23,12 @@ A simple booth ordering system:
 ## 1. Create the Supabase backend
 
 1. Create a free Supabase project.
-2. Open **SQL Editor**.
-3. Paste and run `supabase/schema.sql`.
-4. In **Project Settings → API**, copy:
+2. Install and authenticate the Supabase CLI.
+3. Link the repository with `supabase link --project-ref YOUR_PROJECT_REF`.
+4. Apply the versioned migrations with `supabase db push`.
+5. If the original prototype schema was previously applied, back up its orders first. The Phase 2
+   baseline migration replaces those prototype tables.
+6. In **Project Settings → API**, copy:
    - Project URL
    - Anon public key
 
@@ -42,16 +45,14 @@ Update the values:
 ```env
 VITE_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
 VITE_SUPABASE_ANON_KEY=YOUR_ANON_KEY
-VITE_ADMIN_PIN=2468
 ```
 
-Change `VITE_ADMIN_PIN` before deployment.
+## 3. Menu and prices
 
-## 3. Set coffee prices
+The migration seeds the complete Coffee and Chocolate menu with placeholder SGD prices. In
+Supabase, open **Table Editor → menu_items** to review them.
 
-In Supabase, open **Table Editor → menu_items** and fill in the `price` column.
-
-- Leave a price blank to show “Pay at booth”.
+- Update `price` before launch with the confirmed booth prices.
 - Set `available` to false to temporarily hide an item.
 
 ## 4. Run locally
@@ -65,6 +66,16 @@ npm run dev
 ```
 
 Open the URL shown by Vite. The admin dashboard is at `/admin`.
+
+### Test the customer flow
+
+1. Open `/` and add both a standard drink and a drink that requires a sugar choice.
+2. Adjust quantities, remove an item, enter a pickup name and optional remarks, then place the
+   order.
+3. Confirm the browser opens `/order/:trackingToken` and displays the server-calculated total.
+4. In Supabase Table Editor, change the status to `preparing`, then `ready`. The tracking page
+   refreshes within 10 seconds and displays the green collection state.
+5. Verify an unavailable menu item disappears and cannot be submitted through the RPC.
 
 ## Quality checks
 
@@ -85,7 +96,7 @@ Build settings:
 
 - Build command: `npm run build`
 - Output directory: `dist`
-- Add the three environment variables from `.env` in your hosting dashboard.
+- Add the two environment variables from `.env` in your hosting dashboard.
 
 For single-page routing, configure the host to rewrite all paths to `index.html`.
 
@@ -111,14 +122,8 @@ Add `vercel.json`:
 }
 ```
 
-## 6. Print the QR code
+## Security
 
-After deployment:
-
-1. Open `https://YOUR-DOMAIN/admin` on the iPad.
-2. The dashboard displays a QR code for the customer ordering page.
-3. Screenshot or print that QR code for the booth.
-
-## Security note
-
-The starter dashboard uses a browser PIN and permissive Supabase policies so it is easy to launch. For a long-term production setup, replace this with Supabase Auth and restrict order read/update access to logged-in staff.
+Anonymous customers can read available menu items and call the narrowly scoped order and tracking
+RPCs. They cannot list, insert, or update order tables directly. Secure staff authentication and
+order management will be added in Phase 3; `/admin` is intentionally a placeholder until then.

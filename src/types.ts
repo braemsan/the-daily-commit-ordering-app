@@ -1,30 +1,48 @@
-export type OrderStatus = 'new' | 'preparing' | 'completed' | 'cancelled'
+export const orderStatuses = ['new', 'preparing', 'ready', 'completed', 'cancelled'] as const
+export type OrderStatus = (typeof orderStatuses)[number]
+export type SugarOption = 'sugar' | 'no_sugar'
 
 export interface MenuItem {
   id: number
+  category: 'Coffee' | 'Chocolate'
   name: string
-  price: number | null
+  description: string
+  price: number
+  requiresSugar: boolean
   available: boolean
-  sugar_option: boolean
-  sort_order: number
+  displayOrder: number
 }
 
 export interface CartItem {
-  menu_item_id: number
+  key: string
+  menuItemId: number
   name: string
   quantity: number
-  sugar?: 'sugar' | 'no_sugar'
-  price: number | null
+  sugarOption: SugarOption | null
+  unitPrice: number
 }
 
-export interface Order {
-  id: string
-  order_number: number
-  customer_name: string
-  customer_notes: string | null
+export interface PlaceOrderResult {
+  orderNumber: string
+  trackingToken: string
+  orderTotal: number
+  wasDuplicate: boolean
+}
+
+export interface TrackedOrderItem {
+  name: string
+  quantity: number
+  sugarOption: SugarOption | null
+  unitPrice: number
+  lineTotal: number
+}
+
+export interface TrackedOrder {
+  orderNumber: string
+  customerName: string
+  customerNotes: string | null
   status: OrderStatus
-  items: CartItem[]
-  total: number | null
-  created_at: string
-  updated_at: string
+  total: number
+  createdAt: string
+  items: TrackedOrderItem[]
 }
