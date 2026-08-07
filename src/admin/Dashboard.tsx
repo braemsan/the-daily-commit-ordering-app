@@ -12,7 +12,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib'
 import { formatMoney } from '../lib/format'
 import type { OrderStatus } from '../types'
-import { changeOrderStatus, getTodayOrders } from './api'
+import {
+  changeOrderStatus,
+  getEventSettingsForAdmin,
+  getTodayOrders,
+  setOrderingEnabled,
+} from './api'
+import { useStaffAuth } from './Auth'
 import { OrderCard } from './OrderCard'
 import { createAudioContext, playCafeChime, resumeAudioContext } from './sound'
 import type { AdminOrder, RealtimeState } from './types'
@@ -55,6 +61,7 @@ function soundDebug(message: string, orderId?: string) {
 }
 
 export function Dashboard() {
+  const auth = useStaffAuth()
   const [orders, setOrders] = useState<AdminOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -65,6 +72,8 @@ export function Dashboard() {
   const [realtime, setRealtime] = useState<RealtimeState>('reconnecting')
   const [audioState, setAudioState] = useState<AudioState>('locked')
   const [soundBusy, setSoundBusy] = useState(false)
+  const [orderingEnabled, setOrderingEnabledState] = useState<boolean | null>(null)
+  const [orderingBusy, setOrderingBusy] = useState(false)
   const [soundMessage, setSoundMessage] = useState<string | null>(() =>
     soundWasEnabled() ? 'Tap Enable sound to restore notifications after this page refresh.' : null,
   )
@@ -75,6 +84,15 @@ export function Dashboard() {
   const loadedOnce = useRef(false)
   const refreshTimer = useRef<number | null>(null)
   const date = singaporeDate()
+
+  const loadOrderingStatus = useCallback(async () => {
+    try {
+      const settings = await getEventSettingsForAdmin()
+      setOrderingEnabledState(settings.orderingEnabled)
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Ordering status could not be loaded.')
+    }
+  }, [])
 
   const updateAudioState = useCallback((next: AudioState) => {
     audioStateRef.current = next
@@ -204,7 +222,27 @@ export function Dashboard() {
 
   useEffect(() => {
     void load(true)
-  }, [load])
+    void loadOrderingStatus()
+  }, [load, loadOrderingStatus])
+
+  async function toggleOrdering() {
+    if (orderingEnabled === null || orderingBusy || auth.profile?.role !== 'admin') return
+    const next = !orderingEnabled
+    if (!next && !window.confirm('Customers will no longer be able to place new orders. Continue?'))
+      return
+    setOrderingBusy(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      const saved = await setOrderingEnabled(next)
+      setOrderingEnabledState(saved)
+      setSuccess(`Ordering is now ${saved ? 'online' : 'offline'}.`)
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Ordering status could not be changed.')
+    } finally {
+      setOrderingBusy(false)
+    }
+  }
 
   useEffect(() => {
     const client = supabase
@@ -348,7 +386,38 @@ export function Dashboard() {
         <button type="button" disabled={soundBusy} onClick={testSound}>
           Test sound
         </button>
-        <button type="button" onClick={() => void load(true)}>
+        {auth.profile?.role === 'admin' && (
+          <label className={`ordering-toggle ${orderingEnabled ? 'is-online' : 'is-offline'}`}>
+            <span className="toggle-copy">
+              <small>Ordering</small>
+              <strong>
+                {orderingEnabled === null
+                  ? 'Loading…'
+                  : orderingEnabled
+                    ? 'Ordering Online'
+                    : 'Ordering Offline'}
+              </strong>
+            </span>
+            <input
+              type="checkbox"
+              role="switch"
+              aria-label="Customer ordering availability"
+              checked={orderingEnabled ?? false}
+              disabled={orderingEnabled === null || orderingBusy}
+              onChange={() => void toggleOrdering()}
+            />
+            <span className="toggle-track" aria-hidden="true">
+              <i />
+            </span>
+          </label>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            void load(true)
+            void loadOrderingStatus()
+          }}
+        >
           <RefreshCw /> Refresh
         </button>
       </div>

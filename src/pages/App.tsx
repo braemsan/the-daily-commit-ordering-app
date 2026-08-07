@@ -39,12 +39,25 @@ export default function App() {
     void loadMenu()
   }, [])
 
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      void fetchEventSettings()
+        .then((event) => {
+          setMenuState((current) => (current.kind === 'ready' ? { ...current, event } : current))
+        })
+        .catch(() => undefined)
+    }, 10_000)
+    return () => window.clearInterval(interval)
+  }, [])
+
   const items = useMemo(() => Object.values(cart), [cart])
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
   const freeDrinks = menuState.kind === 'ready' && menuState.event.isActive
+  const orderingEnabled = menuState.kind !== 'ready' || menuState.event.orderingEnabled
 
   function addItem(menuItem: MenuItem, sugarOption: SugarOption | null) {
+    if (!orderingEnabled) return
     const key = `${menuItem.id}:${sugarOption ?? 'standard'}`
     setCart((current) => {
       const existing = current[key]
@@ -67,14 +80,18 @@ export default function App() {
     setCart((current) => {
       const next = { ...current }
       if (quantity <= 0) delete next[key]
-      else if (next[key]) next[key] = { ...next[key], quantity: Math.min(quantity, 20) }
+      else if (next[key]) {
+        const currentQuantity = next[key].quantity
+        if (!orderingEnabled && quantity > currentQuantity) return current
+        next[key] = { ...next[key], quantity: Math.min(quantity, 20) }
+      }
       return next
     })
   }
 
   async function placeOrder(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (submitting || itemCount === 0 || !name.trim()) return
+    if (submitting || !orderingEnabled || itemCount === 0 || !name.trim()) return
     setSubmitting(true)
     setSubmitError(null)
     try {
@@ -129,6 +146,13 @@ export default function App() {
             </section>
           )}
 
+          {menuState.kind === 'ready' && !menuState.event.orderingEnabled && (
+            <section className="ordering-closed-banner" role="status">
+              <h2>Ordering is currently closed.</h2>
+              <p>Feel free to check out our menu — we’ll be back shortly ☕</p>
+            </section>
+          )}
+
           {menuState.kind === 'loading' && <LoadingState />}
           {menuState.kind === 'error' && (
             <ErrorState
@@ -158,6 +182,7 @@ export default function App() {
                     key={item.id}
                     item={item}
                     freeDrinks={freeDrinks}
+                    orderingEnabled={orderingEnabled}
                     onAdd={(sugar) => addItem(item, sugar)}
                   />
                 ))}
@@ -171,6 +196,7 @@ export default function App() {
             items={items}
             regularSubtotal={subtotal}
             freeDrinks={freeDrinks}
+            orderingEnabled={orderingEnabled}
             onChangeQuantity={changeQuantity}
           />
           <CheckoutForm
@@ -178,6 +204,7 @@ export default function App() {
             notes={notes}
             itemCount={itemCount}
             submitting={submitting}
+            orderingEnabled={orderingEnabled}
             error={submitError}
             onNameChange={setName}
             onNotesChange={setNotes}

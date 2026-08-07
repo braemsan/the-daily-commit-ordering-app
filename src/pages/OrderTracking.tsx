@@ -123,6 +123,14 @@ function OrderConfirmation({
         </div>
       </section>
 
+      {order.freeDrinksApplied && (
+        <PayNowCard
+          copyStatus={copyStatus}
+          displayedPaynow={displayedPaynow}
+          onCopy={() => void copyPaynow()}
+        />
+      )}
+
       <section className="wait-message">
         <Clock3 size={22} />
         <div>
@@ -191,48 +199,55 @@ function OrderConfirmation({
           </div>
         )}
       </section>
-      <p className="customer-thanks">Thank you for supporting The Daily Commit ☕</p>
-      {order.freeDrinksApplied && (
-        <section className="paynow-card" aria-labelledby="event-promotion-title">
-          <span className="paynow-kicker">☕ Samsudin's Farmers' Market Party ☕</span>
-          <h2 id="event-promotion-title">Your coffee is completely FOC today!</h2>
-          <div className="paynow-message">
-            <p>
-              But I won't reject any amount
-              <br />
-              sent via PayNow 😉
-            </p>
-          </div>
-          <img
-            className="paynow-qr-image"
-            src="/assets/paynow-qr.jpg"
-            alt="PayNow QR code for The Daily Commit"
-            width="769"
-            height="769"
-          />
-          <div className="paynow-number">
-            <span>PayNow</span>
-            <strong>{displayedPaynow}</strong>
-          </div>
-          <button
-            className="secondary-button paynow-copy-button"
-            type="button"
-            onClick={() => void copyPaynow()}
-          >
-            Copy PayNow Number
-          </button>
-          {copyStatus !== 'idle' && (
-            <p className={copyStatus === 'copied' ? 'copy-success' : 'copy-error'} role="status">
-              {copyStatus === 'copied'
-                ? 'PayNow number copied'
-                : `Couldn’t copy automatically. Please copy ${displayedPaynow}.`}
-            </p>
-          )}
-        </section>
-      )}
       <a className="secondary-button new-order-link" href="/">
         <CheckCircle2 size={18} /> Place another order
       </a>
+      <p className="customer-thanks">Thank you for supporting The Daily Commit ☕</p>
     </div>
+  )
+}
+
+function PayNowCard({
+  copyStatus,
+  displayedPaynow,
+  onCopy,
+}: {
+  copyStatus: 'idle' | 'copied' | 'failed'
+  displayedPaynow: string
+  onCopy: () => void
+}) {
+  return (
+    <section className="paynow-card" aria-labelledby="event-promotion-title">
+      <span className="paynow-kicker">☕ Samsudin's Farmers' Market Party ☕</span>
+      <h2 id="event-promotion-title">Your coffee is completely FOC today!</h2>
+      <div className="paynow-message">
+        <p>
+          But I won't reject any amount
+          <br />
+          sent via PayNow 😉
+        </p>
+      </div>
+      <img
+        className="paynow-qr-image"
+        src="/assets/paynow-qr.jpg"
+        alt="PayNow QR code for The Daily Commit"
+        width="769"
+        height="769"
+      />
+      <div className="paynow-number">
+        <span>PayNow</span>
+        <strong>{displayedPaynow}</strong>
+      </div>
+      <button className="secondary-button paynow-copy-button" type="button" onClick={onCopy}>
+        Copy PayNow Number
+      </button>
+      {copyStatus !== 'idle' && (
+        <p className={copyStatus === 'copied' ? 'copy-success' : 'copy-error'} role="status">
+          {copyStatus === 'copied'
+            ? 'PayNow number copied'
+            : `Couldn’t copy automatically. Please copy ${displayedPaynow}.`}
+        </p>
+      )}
+    </section>
   )
 }

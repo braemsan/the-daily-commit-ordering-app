@@ -59,6 +59,7 @@ const menuSchema = z.object({
   updated_at: z.string(),
 })
 const eventSettingsSchema = z.object({
+  ordering_enabled: z.boolean(),
   free_drinks_enabled: z.boolean(),
   event_title: z.string(),
   event_message: z.string(),
@@ -216,6 +217,7 @@ export async function saveMenuItem(item: AdminMenuItem): Promise<AdminMenuItem> 
 function mapEventSettings(value: unknown): AdminEventSettings {
   const row = eventSettingsSchema.parse(value)
   return {
+    orderingEnabled: row.ordering_enabled,
     freeDrinksEnabled: row.free_drinks_enabled,
     eventTitle: row.event_title,
     eventMessage: row.event_message,
@@ -230,12 +232,20 @@ export async function getEventSettingsForAdmin(): Promise<AdminEventSettings> {
   const { data, error } = await db()
     .from('event_settings')
     .select(
-      'free_drinks_enabled, event_title, event_message, paynow_number, starts_at, ends_at, updated_at',
+      'ordering_enabled, free_drinks_enabled, event_title, event_message, paynow_number, starts_at, ends_at, updated_at',
     )
     .eq('id', 1)
     .single()
   fail(error)
   return mapEventSettings(data)
+}
+
+export async function setOrderingEnabled(orderingEnabled: boolean): Promise<boolean> {
+  const { data, error } = await db().rpc('set_ordering_enabled', {
+    p_ordering_enabled: orderingEnabled,
+  })
+  fail(error)
+  return z.object({ ordering_enabled: z.boolean() }).parse(data).ordering_enabled
 }
 
 export async function saveEventSettings(settings: AdminEventSettings): Promise<AdminEventSettings> {

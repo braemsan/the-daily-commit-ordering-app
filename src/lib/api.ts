@@ -25,6 +25,7 @@ const menuRowSchema = z.object({
 })
 
 const eventSettingsSchema = z.object({
+  ordering_enabled: z.boolean(),
   free_drinks_enabled: z.boolean(),
   event_title: z.string(),
   event_message: z.string(),
@@ -108,7 +109,9 @@ export async function fetchMenu(): Promise<MenuItem[]> {
 export async function fetchEventSettings(): Promise<EventSettings> {
   const { data, error } = await client()
     .from('event_settings')
-    .select('free_drinks_enabled, event_title, event_message, paynow_number, starts_at, ends_at')
+    .select(
+      'ordering_enabled, free_drinks_enabled, event_title, event_message, paynow_number, starts_at, ends_at',
+    )
     .eq('id', 1)
     .single()
 
@@ -118,6 +121,7 @@ export async function fetchEventSettings(): Promise<EventSettings> {
   const afterStart = row.starts_at === null || now >= Date.parse(row.starts_at)
   const beforeEnd = row.ends_at === null || now < Date.parse(row.ends_at)
   return {
+    orderingEnabled: row.ordering_enabled,
     freeDrinksEnabled: row.free_drinks_enabled,
     isActive: row.free_drinks_enabled && afterStart && beforeEnd,
     eventTitle: row.event_title,
@@ -145,7 +149,14 @@ export async function submitOrder(input: {
     })),
   })
 
-  if (error) throw new Error(messageFor(error))
+  if (error) {
+    if (/ORDERING_CLOSED|ordering is currently closed/i.test(error.message)) {
+      throw new Error(
+        "Ordering has just closed. Your cart is still here if you'd like to try again later.",
+      )
+    }
+    throw new Error(messageFor(error))
+  }
   const row = placeOrderRowSchema.parse(z.array(z.unknown()).parse(data)[0])
   return {
     orderNumber: row.order_number,

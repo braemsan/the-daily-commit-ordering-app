@@ -6,6 +6,7 @@ export function CheckoutForm({
   notes,
   itemCount,
   submitting,
+  orderingEnabled,
   error,
   onNameChange,
   onNotesChange,
@@ -15,12 +16,13 @@ export function CheckoutForm({
   notes: string
   itemCount: number
   submitting: boolean
+  orderingEnabled: boolean
   error: string | null
   onNameChange: (value: string) => void
   onNotesChange: (value: string) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
-  const disabled = itemCount === 0 || name.trim().length === 0 || submitting
+  const disabled = !orderingEnabled || itemCount === 0 || name.trim().length === 0 || submitting
 
   return (
     <form className="checkout-form" onSubmit={onSubmit} aria-labelledby="details-title">
@@ -60,8 +62,15 @@ export function CheckoutForm({
           {error}
         </div>
       )}
+      {!orderingEnabled && (
+        <div className="ordering-closed-checkout" role="status">
+          Ordering is currently closed. Your cart will stay here for later.
+        </div>
+      )}
       <button className="place-order-button" type="submit" disabled={disabled}>
-        <span>{submitting ? 'Placing your order…' : 'Place order'}</span>
+        <span>
+          {submitting ? 'Placing your order…' : orderingEnabled ? 'Place order' : 'Ordering closed'}
+        </span>
         {!submitting && <ArrowRight size={20} />}
       </button>
       <p className="secure-note">

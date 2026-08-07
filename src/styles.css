@@ -186,6 +186,36 @@ button:disabled {
   color: #72543f;
   line-height: 1.55;
 }
+.ordering-closed-banner {
+  margin: -28px 0 42px;
+  padding: 22px 24px;
+  border: 1px solid #d7b29e;
+  border-radius: 20px;
+  color: #56372c;
+  background: linear-gradient(135deg, #fff4ed, #f3dfd2);
+  box-shadow: 0 12px 30px rgba(91, 51, 35, 0.08);
+}
+.event-banner + .ordering-closed-banner {
+  margin-top: -24px;
+}
+.ordering-closed-banner h2 {
+  margin: 0 0 7px;
+  font-family: Georgia, serif;
+  font-size: 1.55rem;
+}
+.ordering-closed-banner p,
+.ordering-closed-checkout {
+  margin: 0;
+  color: #765447;
+  line-height: 1.55;
+}
+.ordering-closed-checkout {
+  padding: 12px 14px;
+  border-radius: 11px;
+  background: #fff0e8;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
 
 .menu-category + .menu-category {
   margin-top: 58px;
@@ -1295,6 +1325,73 @@ button:disabled {
   color: #983e35;
   border-color: #e5c1bd;
   background: #fff3f1;
+}
+.ordering-toggle {
+  min-height: 47px;
+  padding: 5px 7px 5px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #e1b9b3;
+  border-radius: 13px;
+  color: #873c34;
+  background: #fff2f0;
+  cursor: pointer;
+}
+.ordering-toggle.is-online {
+  color: #2f6d40;
+  border-color: #bad9c1;
+  background: #edf7ef;
+}
+.ordering-toggle .toggle-copy {
+  display: grid;
+  line-height: 1.15;
+}
+.ordering-toggle small {
+  font-size: 0.59rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.ordering-toggle strong {
+  font-size: 0.72rem;
+}
+.ordering-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.toggle-track {
+  width: 43px;
+  height: 25px;
+  padding: 3px;
+  display: block;
+  border-radius: 999px;
+  background: #b86c61;
+  transition: background 160ms ease;
+}
+.toggle-track i {
+  width: 19px;
+  height: 19px;
+  display: block;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(50, 30, 25, 0.2);
+  transition: transform 160ms ease;
+}
+.ordering-toggle input:checked + .toggle-track {
+  background: #4c9661;
+}
+.ordering-toggle input:checked + .toggle-track i {
+  transform: translateX(18px);
+}
+.ordering-toggle:focus-within {
+  outline: 3px solid rgba(173, 105, 65, 0.22);
+  outline-offset: 2px;
+}
+.ordering-toggle:has(input:disabled) {
+  cursor: wait;
+  opacity: 0.65;
 }
 .dashboard-toolbar button:disabled {
   cursor: wait;

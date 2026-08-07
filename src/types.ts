@@ -23,6 +23,7 @@ export interface CartItem {
 }
 
 export interface EventSettings {
+  orderingEnabled: boolean
   freeDrinksEnabled: boolean
   isActive: boolean
   eventTitle: string

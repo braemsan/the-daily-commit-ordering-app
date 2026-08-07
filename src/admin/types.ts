@@ -57,6 +57,7 @@ export interface AdminMenuItem {
 }
 
 export interface AdminEventSettings {
+  orderingEnabled: boolean
   freeDrinksEnabled: boolean
   eventTitle: string
   eventMessage: string

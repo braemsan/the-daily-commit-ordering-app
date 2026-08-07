@@ -6,11 +6,13 @@ export function CartPanel({
   items,
   regularSubtotal,
   freeDrinks,
+  orderingEnabled,
   onChangeQuantity,
 }: {
   items: CartItem[]
   regularSubtotal: number
   freeDrinks: boolean
+  orderingEnabled: boolean
   onChangeQuantity: (key: string, quantity: number) => void
 }) {
   const count = items.reduce((sum, item) => sum + item.quantity, 0)
@@ -67,7 +69,7 @@ export function CartPanel({
                 <button
                   type="button"
                   onClick={() => onChangeQuantity(item.key, item.quantity + 1)}
-                  disabled={item.quantity >= 20}
+                  disabled={!orderingEnabled || item.quantity >= 20}
                   aria-label={`Increase ${item.name}`}
                 >
                   <Plus size={16} />
