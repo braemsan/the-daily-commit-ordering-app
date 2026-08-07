@@ -1347,12 +1347,6 @@ button:disabled {
   display: grid;
   line-height: 1.15;
 }
-.ordering-toggle small {
-  font-size: 0.59rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
 .ordering-toggle strong {
   font-size: 0.72rem;
 }

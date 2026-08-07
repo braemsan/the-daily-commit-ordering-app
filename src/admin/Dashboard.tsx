@@ -389,13 +389,8 @@ export function Dashboard() {
         {auth.profile?.role === 'admin' && (
           <label className={`ordering-toggle ${orderingEnabled ? 'is-online' : 'is-offline'}`}>
             <span className="toggle-copy">
-              <small>Ordering</small>
               <strong>
-                {orderingEnabled === null
-                  ? 'Loading…'
-                  : orderingEnabled
-                    ? 'Ordering Online'
-                    : 'Ordering Offline'}
+                {orderingEnabled === null ? 'Loading…' : orderingEnabled ? 'Online' : 'Offline'}
               </strong>
             </span>
             <input
