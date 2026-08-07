@@ -73,6 +73,7 @@ export function Dashboard() {
   const [audioState, setAudioState] = useState<AudioState>('locked')
   const [soundBusy, setSoundBusy] = useState(false)
   const [orderingEnabled, setOrderingEnabledState] = useState<boolean | null>(null)
+  const [freeDrinksEnabled, setFreeDrinksEnabled] = useState(false)
   const [orderingBusy, setOrderingBusy] = useState(false)
   const [soundMessage, setSoundMessage] = useState<string | null>(() =>
     soundWasEnabled() ? 'Tap Enable sound to restore notifications after this page refresh.' : null,
@@ -89,6 +90,7 @@ export function Dashboard() {
     try {
       const settings = await getEventSettingsForAdmin()
       setOrderingEnabledState(settings.orderingEnabled)
+      setFreeDrinksEnabled(settings.freeDrinksEnabled)
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Ordering status could not be loaded.')
     }
@@ -351,6 +353,12 @@ export function Dashboard() {
   const paid = orders.filter((order) => order.status !== 'cancelled')
   const revenue = paid.reduce((sum, order) => sum + order.total, 0)
   const regularValue = paid.reduce((sum, order) => sum + order.regularTotal, 0)
+  const drinksServed = paid.reduce(
+    (total, order) =>
+      total + order.items.reduce((orderTotal, item) => orderTotal + item.quantity, 0),
+    0,
+  )
+  const averageDrinks = paid.length ? drinksServed / paid.length : 0
 
   return (
     <>
@@ -436,13 +444,21 @@ export function Dashboard() {
         <Metric label="Preparing" value={count('preparing')} tone="amber" />
         <Metric label="Ready" value={count('ready')} tone="green" />
         <Metric label="Completed" value={count('completed')} />
-        <Metric label="Total orders" value={orders.length} icon={<ShoppingBag />} />
-        <Metric label="Revenue" value={formatMoney(revenue)} icon={<CircleDollarSign />} />
+        <Metric label="Total orders" value={paid.length} icon={<ShoppingBag />} />
+        {freeDrinksEnabled ? (
+          <Metric label="Drinks served" value={drinksServed} />
+        ) : (
+          <Metric label="Revenue" value={formatMoney(revenue)} icon={<CircleDollarSign />} />
+        )}
         <Metric label="Regular menu value" value={formatMoney(regularValue)} />
-        <Metric
-          label="Average value"
-          value={formatMoney(paid.length ? revenue / paid.length : 0)}
-        />
+        {freeDrinksEnabled ? (
+          <Metric label="Average drinks / order" value={averageDrinks.toFixed(2)} />
+        ) : (
+          <Metric
+            label="Average order value"
+            value={formatMoney(paid.length ? revenue / paid.length : 0)}
+          />
+        )}
       </section>
       <section className="order-controls no-print">
         <div className="filter-tabs">
