@@ -72,4 +72,12 @@ export interface HistoryPage {
   count: number
 }
 
+export interface DrinkPerformance {
+  drinkName: string
+  cupsSold: number
+  ordersCount: number
+  regularValue: number
+  chargedValue: number
+}
+
 export type RealtimeState = 'connected' | 'reconnecting' | 'disconnected'

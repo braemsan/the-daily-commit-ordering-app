@@ -5,6 +5,7 @@ import type {
   AdminEventSettings,
   AdminMenuItem,
   AdminOrder,
+  DrinkPerformance,
   HistoryPage,
   StaffProfile,
 } from './types'
@@ -67,6 +68,13 @@ const eventSettingsSchema = z.object({
   starts_at: z.string().nullable(),
   ends_at: z.string().nullable(),
   updated_at: z.string(),
+})
+const drinkPerformanceSchema = z.object({
+  drink_name: z.string(),
+  cups_sold: money,
+  orders_count: money,
+  regular_value: money,
+  charged_value: money,
 })
 
 function db() {
@@ -262,7 +270,8 @@ export async function saveEventSettings(settings: AdminEventSettings): Promise<A
 }
 
 export async function getOrderHistory(input: {
-  date: string
+  startDate: string
+  endDate: string
   status: AdminOrder['status'] | 'all'
   search: string
   page: number
@@ -271,7 +280,8 @@ export async function getOrderHistory(input: {
   let query = db()
     .from('orders')
     .select(orderSelect, { count: 'exact' })
-    .eq('order_date', input.date)
+    .gte('order_date', input.startDate)
+    .lte('order_date', input.endDate)
   if (input.status !== 'all') query = query.eq('status', input.status)
   const safeSearch = input.search.trim().replace(/[%_,().]/g, '')
   if (safeSearch)
@@ -282,4 +292,25 @@ export async function getOrderHistory(input: {
     .range(from, from + input.pageSize - 1)
   fail(error)
   return { orders: z.array(z.unknown()).parse(data).map(mapOrder), count: count ?? 0 }
+}
+
+export async function getDrinkPerformance(
+  startDate: string,
+  endDate: string,
+): Promise<DrinkPerformance[]> {
+  const { data, error } = await db().rpc('get_drink_performance', {
+    p_start_date: startDate,
+    p_end_date: endDate,
+  })
+  fail(error)
+  return z
+    .array(drinkPerformanceSchema)
+    .parse(data)
+    .map((row) => ({
+      drinkName: row.drink_name,
+      cupsSold: row.cups_sold,
+      ordersCount: row.orders_count,
+      regularValue: row.regular_value,
+      chargedValue: row.charged_value,
+    }))
 }
