@@ -31,7 +31,7 @@ A simple booth ordering system:
    dependency.
 3. Authenticate with `npx supabase login`.
 4. Link the repository with
-   `npx supabase link --project-ref rfxowcdtkqfjjakmgnhv`.
+   `npx supabase link --project-ref YOUR_PROJECT_REF`.
 5. Apply every versioned migration with `npx supabase db push` (or `supabase db push` when the CLI
    is installed globally).
 6. If the original prototype schema was previously applied, back up its orders first. The Phase 2
@@ -51,7 +51,7 @@ cp .env.example .env
 Update the values:
 
 ```env
-VITE_SUPABASE_URL=https://rfxowcdtkqfjjakmgnhv.supabase.co
+VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 VITE_SUPABASE_ANON_KEY=YOUR_ANON_KEY
 ```
 
@@ -183,7 +183,7 @@ Connect this repository to a Cloudflare Pages project and use these build settin
 Configure these environment variables for both production and preview deployments:
 
 ```env
-VITE_SUPABASE_URL=https://rfxowcdtkqfjjakmgnhv.supabase.co
+VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
 ```
 
